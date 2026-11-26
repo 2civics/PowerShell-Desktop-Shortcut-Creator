@@ -1,204 +1,128 @@
-# AsusNatView
+# PowerShell Desktop Shortcut Creator (`create_desktop_shortcut`)
 
-[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AsusNatView?label=PowerShell%20Gallery&color=0078D6&cacheSeconds=3600)](https://www.powershellgallery.com/packages/AsusNatView/1.0.0)
-[![GitHub Release](https://img.shields.io/github/v/release/2civics/Asus-Nat-View?label=GitHub%20Release&color=2EA44F&cacheSeconds=3600)](https://github.com/2civics/Asus-Nat-View/releases/tag/v.1.0.0)
-[![PowerShell 5.1 | 7.x](https://img.shields.io/badge/PowerShell-5.1%20%7C%207.x-5391FE)](https://www.powershellgallery.com/packages/AsusNatView/1.0.0)
-[![Platform Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6)](https://github.com/2civics/Asus-Nat-View)
+[![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/create_desktop_shortcut?label=PowerShell%20Gallery&color=0284C7&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZmYiPjxwYXRoIGQ9Ik0zIDVsNyA3LTcgN3YtM2w0LTQtNC00VjV6bTggMTJoMTB2MkgxMXYtMnoiIC8+PC9zdmc+&cacheSeconds=3600)](https://www.powershellgallery.com/packages/create_desktop_shortcut)
+[![PowerShell Gallery Downloads](https://img.shields.io/powershellgallery/dt/create_desktop_shortcut?label=Downloads&color=16A34A&cacheSeconds=3600)](https://www.powershellgallery.com/packages/create_desktop_shortcut)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZmYiPjxwYXRoIGQ9Ik0wIDMuNUw5LjggMi4xdjkuNEgwem0xMS0xLjZMMjQgMHYxMS41SDExek0wIDEyLjVoOS44djkuNEwwIDIwLjV6bTExIDBIMjRWMjRsLTEzLTEuOXoiIC8+PC9zdmc+)](https://github.com/2civics/PowerShell-Desktop-Shortcut-Creator)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207.x-5391FE?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZmYiPjxwYXRoIGQ9Ik0zIDVsNyA3LTcgN3YtM2w0LTQtNC00VjV6bTggMTJoMTB2MkgxMXYtMnoiIC8+PC9zdmc+)](https://github.com/2civics/PowerShell-Desktop-Shortcut-Creator)
 
-[PowerShell Gallery](https://www.powershellgallery.com/packages/AsusNatView/1.0.0) | [GitHub Releases](https://github.com/2civics/Asus-Nat-View/releases) | [Report an Issue](https://github.com/2civics/Asus-Nat-View/issues)
+A standalone, dark-mode-aware Windows Forms GUI utility for creating `.lnk` Desktop shortcuts for PowerShell (`.ps1`) scripts—supporting both **Windows PowerShell 5.1** and **PowerShell 7.x (`pwsh.exe`)**, native Windows icon browsing with live preview, UAC elevation flag patching, and completely windowless background execution.
 
-A lightweight, read-only Windows WPF GUI for inspecting live `iptables` NAT rules (`PREROUTING`, `POSTROUTING`, `VSERVER`) on ASUS (Asuswrt / Asuswrt-Merlin) routers over SSH.
+> **Tip:** Looking for full PowerShell Gallery discovery, publishing, script updates, and integrated shortcut creation in one suite? Check out **[PSGallery-Manager](https://www.powershellgallery.com/packages/PSGallery-Manager)** ([GitHub](https://github.com/2civics/PSGallery-Manager)).
+
+---
+
+## Links
+
+* **PowerShell Gallery (Latest):** https://www.powershellgallery.com/packages/create_desktop_shortcut
+* **PowerShell Gallery (v1.1.0):** https://www.powershellgallery.com/packages/create_desktop_shortcut/1.1.0
+* **GitHub Repository:** https://github.com/2civics/PowerShell-Desktop-Shortcut-Creator
+* **Companion Suite (`PSGallery-Manager`):** https://www.powershellgallery.com/packages/PSGallery-Manager
+
+---
 
 ## Features
 
-* **Read-Only Inspection:** Queries `iptables -t nat -L <CHAIN> -v -n -x` over SSH without modifying router firewall state.
-* **Live Search Filter:** Filters across all columns (ports, IP addresses, targets, interfaces, and rule details) in real time as you type.
-* **Native Dark & Light Themes:** Automatically detects your Windows 10/11 app theme (including native DWM dark title bars) or accepts manual `Dark` / `Light` overrides.
-* **Exact Packet & Byte Counters:** Displays unrounded packet and byte totals for verifying port forwards and custom NAT redirects.
+* **Dual Runtime Support (PS 5.1 & PS 7.x):** Target either Windows PowerShell 5.1 (`powershell.exe`) or PowerShell 7.x (`pwsh.exe`). Automatically detects MSI and MSIX (`WindowsApps`) installations and offers a one-click background installer (`winget` with GitHub `.msi` fallback) if PowerShell 7 is not installed.
+* **Runtime-Aware Argument Builder:** Automatically injects `-STA` only when targeting Windows PowerShell 5.1 (preventing invalid-argument crashes in PowerShell 7) and updates the live command preview as you toggle options.
+* **Native Shell Icon Picker & Live Preview:** Browse icons inside `.ico`, `.exe`, or `.dll` files via **Choose Icon...**, jump straight into `shell32.dll` via **Windows Icons...**, or reset to the active PowerShell host icon with a live 32×32 preview.
+* **Windowless Background Execution (`Hidden`):** Selecting **Hidden** adds `-WindowStyle Hidden`, configures the `.lnk` to start minimized (preventing console flash), and automatically disables `-NoExit` so background processes do not stay orphaned.
+* **Run as Administrator (`.lnk` Elevation Patching):** Sets the `SLDF_RUNAS_USER` bit (`0x20` at byte `0x15`) directly on the generated `.lnk` file so Windows prompts for UAC elevation on launch.
+* **Runtime-Preserving Self-Elevation & Hidden Host Console:** Automatically elevates to Administrator in the same PowerShell runtime (`powershell.exe` or `pwsh.exe`) that launched it and hides its own console window via Win32 `ShowWindow`.
+* **Windows 11 Dark / Light Mode:** Automatically matches your Windows app theme (`AppsUseLightTheme`) with a DWM dark title bar and an in-app toggle button.
 
-## Prerequisites
+---
 
-1. **Windows 10 or Windows 11** with PowerShell 5.1 or PowerShell 7+.
-2. **Windows OpenSSH Client** (`ssh.exe` available in your system `PATH`).
-3. **ASUS Router** running stock Asuswrt or Asuswrt-Merlin firmware.
+## Requirements
 
-## Router & SSH Key Setup
+* **Operating System:** Windows 10 or Windows 11
+* **PowerShell:** Windows PowerShell 5.1 (built-in) or PowerShell 7.x (`pwsh.exe`)
+* **Privileges:** Administrator (the script automatically requests UAC elevation on startup)
 
-Because `AsusNatView.ps1` connects non-interactively (`BatchMode=yes`), you need an SSH key pair on your PC and your public key added to your router.
-
-### 1. Generate an SSH Key Pair on Windows
-
-Open PowerShell and run the following commands to create the `.ssh` directory (if it does not exist) and generate an Ed25519 key pair:
-
-```powershell
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
-ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519" -N ""
-```
-
-> **Note:** Leaving the passphrase empty (`-N ""`) allows `AsusNatView.ps1` to connect automatically without prompting. If you prefer a passphrase-protected key, load it into the Windows `ssh-agent` service first.
-
-Copy your new **public** key to the Windows clipboard:
-
-```powershell
-Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" | Set-Clipboard
-```
-
-### 2. Enable SSH and Add Your Public Key on the Router
-
-1. Log into your ASUS router's web interface (`http://192.168.50.1` or `http://router.asus.com`).
-2. Navigate to **Administration > System**.
-3. Under the **Service** section, set **Enable SSH** to **LAN only**.
-   > **Security Note:** Always select **LAN only**—never **LAN & WAN**—so SSH is never exposed to the public internet.
-4. Set **Allow SSH password login** to **No** (optional, recommended once key login is verified).
-5. Paste your copied `id_ed25519.pub` key (a single line starting with `ssh-ed25519 ...`) into the **Authorized Keys** box.
-6. Click **Apply** at the bottom of the page.
-
-### 3. Trust the Router's Host Key (First-Time Connection)
-
-Connect once manually in PowerShell so OpenSSH saves your router's fingerprint to `$env:USERPROFILE\.ssh\known_hosts`:
-
-```powershell
-ssh -i "$env:USERPROFILE\.ssh\id_ed25519" admin@192.168.50.1
-```
-
-Type `yes` when prompted to continue connecting, then type `exit` to close the session.
+---
 
 ## Installation
 
-### Option 1: PowerShell Gallery
+### Option 1: Install from PowerShell Gallery (Recommended)
 
-Install directly from the [PowerShell Gallery](https://www.powershellgallery.com/packages/AsusNatView/1.0.0):
+Open PowerShell and run:
 
 ```powershell
-Install-Script -Name AsusNatView
+Install-Script -Name create_desktop_shortcut -Force
 ```
 
 To update an existing installation to the latest version:
 
 ```powershell
-Update-Script -Name AsusNatView
+Update-Script -Name create_desktop_shortcut -Force
 ```
 
-### Option 2: Manual Download
+### Option 2: Save or Download Without Installing
 
-Download `AsusNatView.ps1` from the [Releases](https://github.com/2civics/Asus-Nat-View/releases) page and save it to your preferred scripts directory.
-
-## Configuration
-
-Edit the `# --- Configuration ---` section at the top of `AsusNatView.ps1` to match your router and SSH key setup:
+To download the `.ps1` file to a local folder using `Save-Script`:
 
 ```powershell
-# --- Configuration ---
-$RouterIP     = "192.168.50.1"
-$User         = "admin"
-$KeyPath      = "$env:USERPROFILE\.ssh\id_ed25519"
-$DeviceLabel  = "ASUS Router"
-$Chains       = @("PREROUTING", "POSTROUTING", "VSERVER")
-$DefaultChain = "PREROUTING"
-$Theme        = "Auto"   # Options: "Auto", "Dark", "Light"
+Save-Script -Name create_desktop_shortcut -Path "$env:USERPROFILE\Downloads"
 ```
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `$RouterIP` | `"192.168.50.1"` | IP address or hostname of your ASUS router |
-| `$User` | `"admin"` | Router SSH login username |
-| `$KeyPath` | `"$env:USERPROFILE\.ssh\id_ed25519"` | Path to your OpenSSH private key file |
-| `$DeviceLabel` | `"ASUS Router"` | Router name displayed in the window title and error dialogs |
-| `$Chains` | `@("PREROUTING", "POSTROUTING", "VSERVER")` | `iptables` NAT chains shown in the dropdown selector |
-| `$DefaultChain` | `"PREROUTING"` | Initial NAT chain loaded when the window opens |
-| `$Theme` | `"Auto"` | UI color scheme (`"Auto"`, `"Dark"`, or `"Light"`) |
+Or download `create_desktop_shortcut.ps1` directly from the [GitHub Releases](https://github.com/2civics/PowerShell-Desktop-Shortcut-Creator/releases) page.
+
+---
 
 ## Usage
 
-If installed via `Install-Script` (and your PowerShell Scripts folder is in `PATH`):
+If your PowerShell Scripts directory is in your `$env:PATH`, launch the utility from any terminal or Run prompt:
 
 ```powershell
-AsusNatView.ps1
+create_desktop_shortcut.ps1
 ```
 
-Or run directly from a local folder:
+Or run it directly by path:
 
 ```powershell
-.\AsusNatView.ps1
+& "$env:ProgramFiles\WindowsPowerShell\Scripts\create_desktop_shortcut.ps1"
 ```
 
-## Creating a Windowless Desktop Shortcut
+### Creating a Shortcut
 
-You can launch `AsusNatView.ps1` directly from your Desktop without leaving a PowerShell console window open in the background.
+1. **PowerShell Script (`.ps1`):** Click **Browse...** and select the target `.ps1` script. The Desktop shortcut name populates automatically from the script filename.
+2. **Shortcut Icon:** Keep the default PowerShell icon, click **Choose Icon...** to pick from any `.ico`, `.exe`, or `.dll`, or click **Windows Icons...** to browse `shell32.dll`.
+3. **PowerShell Mode:** Choose **PowerShell 5.1 (`powershell.exe`)** or **PowerShell 7.x (`pwsh.exe`)**. If PowerShell 7 is selected and not installed, the tool prompts to install it automatically.
+4. **Launch Options:**
+   * **Run as Administrator:** Triggers a UAC prompt whenever the shortcut is launched.
+   * **Keep PowerShell window open (`-NoExit`):** Keeps the console open after script completion (disabled automatically when **Window** is set to **Hidden**).
+   * **Bypass Execution Policy:** Adds `-ExecutionPolicy Bypass` (enabled by default).
+   * **Window:** Choose **Normal**, **Minimized**, **Maximized**, or **Hidden**.
+   * **Script Arguments:** Append any parameters passed directly to your `.ps1` script.
+5. **Create Shortcut:** Verify the generated command in **Shortcut Target Command Preview** and click **Create Shortcut** to save `<Name>.lnk` to your Desktop.
 
-### Option 1: Use PowerShell Desktop Shortcut Creator (Recommended)
-
-For an easy point-and-click setup, download **[PowerShell Desktop Shortcut Creator](https://github.com/2civics/PowerShell-Desktop-Shortcut-Creator)** from GitHub (also available on the PowerShell Gallery via `Install-Script -Name create_desktop_shortcut`). It gives you a dark-mode GUI to browse for `AsusNatView.ps1`, enable windowless background execution, choose PowerShell 5.1 or 7.x, and pick a Windows system icon automatically.
-
-### Option 2: Create Manually in Windows
-
-1. **Locate your script path:**
-   * If you downloaded `AsusNatView.ps1` manually, note its full path (for example, `C:\Scripts\AsusNatView.ps1`).
-   * If you installed it via `Install-Script`, run the following in PowerShell to get its exact path:
-     ```powershell
-     (Get-Command AsusNatView.ps1).Source
-     ```
-2. Right-click an empty area on your **Desktop** and select **New > Shortcut**.
-3. In the **Type the location of the item** box, enter the following command (replacing `C:\Path\To\AsusNatView.ps1` with your actual path):
-   ```text
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Path\To\AsusNatView.ps1"
-   ```
-4. Click **Next**, type `AsusNatView` as the shortcut name, and click **Finish**.
-5. *(Optional)* To assign a network icon, right-click the shortcut, select **Properties > Change Icon...**, enter `%SystemRoot%\System32\netshell.dll` (or `shell32.dll`), choose an icon, and click **OK**.
-
-### Option 3: Create Automatically via PowerShell
-
-Run this snippet in PowerShell to create the shortcut on your Desktop automatically (if you downloaded the script manually, replace `"C:\Path\To\AsusNatView.ps1"` with your saved file path):
-
-```powershell
-$ScriptPath = (Get-Command AsusNatView.ps1 -ErrorAction SilentlyContinue).Source
-if (-not $ScriptPath) {$ScriptPath = "C:\Path\To\AsusNatView.ps1" }
-
-$WshShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WshShell.CreateShortcut("$env:USERPROFILE\Desktop\AsusNatView.lnk")
-$Shortcut.TargetPath = "powershell.exe"
-$Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScriptPath`""
-$Shortcut.WorkingDirectory = Split-Path -Path$ScriptPath -Parent
-$Shortcut.IconLocation = "$env:SystemRoot\System32\netshell.dll,0"
-$Shortcut.Description = "Inspect live iptables NAT rules on ASUS routers"
-$Shortcut.Save()
-```
-
-## Keyboard Shortcuts
-
-* **Type in Filter box:** Filter displayed rules in real time
-* **F5:** Refresh packet and byte counters for the selected chain
-* **Esc:** Close the window
+---
 
 ## Troubleshooting
 
-### "Connection refused" or "Connection timed out"
-* **SSH is disabled on the router:** Verify **Enable SSH** is set to **LAN only** under **Administration > System** and that you clicked **Apply**.
-* **Wrong router IP address:** Newer ASUS models default to `192.168.50.1`, while older models or custom subnets often use `192.168.1.1`. Update `$RouterIP` in the Configuration section to match your gateway IP.
-* **Custom SSH port:** If you changed the router's SSH port away from `22`, add `-p <port>` to the `ssh` command inside `Get-NatRules`.
-
-### "Host key verification failed" on First Run
-* Because `AsusNatView.ps1` runs OpenSSH with `-o BatchMode=yes`, it cannot answer interactive fingerprint prompts.
-* **Fix:** Run `ssh -i "$env:USERPROFILE\.ssh\id_ed25519" admin@192.168.50.1` once manually in PowerShell, type `yes` to trust the host key, and exit.
-
-### "Permission denied (publickey)"
-* **Verify your username:** ASUS routers let you customize the web UI login username during initial setup. Ensure `$User` matches the exact admin username configured on your router (it may not be `admin`).
-* **Check your key paths:** `$KeyPath` in `AsusNatView.ps1` must point to your **private** key file (`id_ed25519`), while the contents of your **public** key file (`id_ed25519.pub`) must be pasted into **Administration > System > Authorized Keys** on the router.
-* **Key has a passphrase:** If you created the key with a passphrase instead of `-N ""`, `BatchMode=yes` will reject it unless the key is loaded into the Windows `ssh-agent` service (`Start-Service ssh-agent; ssh-add "$env:USERPROFILE\.ssh\id_ed25519"`).
-
-### "'ssh' is not recognized..."
-* The built-in Windows OpenSSH Client is not installed or enabled. Open **Windows Settings > System > Optional features**, click **Add an optional feature**, and install **OpenSSH Client** (or run `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0` in an elevated PowerShell prompt).
-
-### "Unable to retrieve VSERVER rules" or Empty Table
-* `VSERVER` is an Asuswrt / Asuswrt-Merlin chain used for port forwarding (Virtual Server). If you are querying a non-ASUS Linux router that lacks a `VSERVER` chain, remove `"VSERVER"` from the `$Chains` array in the Configuration block.
-* If the window opens with `0` rows, no active NAT or port-forwarding rules are currently configured in that chain.
-
-### Script Blocked by PowerShell Execution Policy
-* If Windows blocks local scripts from running, allow locally created scripts for your user account:
+* **Running scripts is disabled on this system:**
+  Allow locally signed/installed scripts for your user account:
   ```powershell
-  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+  ```
+* **Downloaded `.ps1` blocked by Windows Mark-of-the-Web:**
+  If you downloaded the script manually in a browser, unblock it before running:
+  ```powershell
+  Unblock-File -Path .\create_desktop_shortcut.ps1
   ```
 
-## License
+---
 
-MIT License
+## Changelog
+
+### v1.2.0
+* Added **PowerShell 5.1** and **PowerShell 7.x (`pwsh.exe`)** mode selection with `Get-Pwsh7Info` detection (`InstalledVersions` registry keys, `App Paths`, MSI, and MSIX `WindowsApps` paths) and automatic background installation (`winget` + GitHub `.msi` fallback).
+* Added the **Windows Icons...** button (`shell32.dll`) alongside **Choose Icon...** and **Reset**.
+* Conditionally injects `-STA` only for Windows PowerShell 5.1 during self-relaunch and shortcut creation.
+* Preserved the active PowerShell host executable across UAC self-elevation via `(Get-Process -Id $PID).Path`.
+* Fixed `Add-Type` assembly resolution on PowerShell 7 (.NET 8+) and added forced foreground window activation (`SW_SHOW` + `SetForegroundWindow`).
+
+### v1.1.0
+* Hid the PowerShell console window when running this utility via hidden relaunch flags and Win32 `ShowWindow` fallback.
+* Added a **Hidden** option to the **Window** dropdown to execute target scripts with `-WindowStyle Hidden` (and start minimized to prevent console flash).
+* Automatically disables `-NoExit` when **Hidden** is selected to prevent orphaned background PowerShell processes.
+* Updated the live command preview to reflect `-WindowStyle Hidden` dynamically.
