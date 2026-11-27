@@ -7,6 +7,9 @@
 
 A standalone, dark-mode-aware Windows Forms GUI utility for creating `.lnk` Desktop shortcuts for PowerShell (`.ps1`) scripts—supporting both **Windows PowerShell 5.1** and **PowerShell 7.x (`pwsh.exe`)**, native Windows icon browsing with live preview, UAC elevation flag patching, and completely windowless background execution.
 
+<img width="566" height="601" alt="Screenshot 2026-11-27 133926" src="https://github.com/user-attachments/assets/99d1ed1d-de0c-42ba-b017-1543f4e0543d" />
+
+
 > **Tip:** Looking for full PowerShell Gallery discovery, publishing, script updates, and integrated shortcut creation in one suite? Check out **[PSGallery-Manager](https://www.powershellgallery.com/packages/PSGallery-Manager)** ([GitHub](https://github.com/2civics/PSGallery-Manager)).
 
 ---
