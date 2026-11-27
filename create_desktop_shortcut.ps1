@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.2.0
+.VERSION 1.2.1
 
 .GUID 5991d012-5e7c-4ad2-8ccf-cdb75a0fdc73
 
@@ -10,11 +10,17 @@
 
 .COPYRIGHT (c) 2026 waresoft. All rights reserved.
 
-.TAGS PowerShell Automation
+.TAGS PowerShell Shortcut ShortcutCreator DesktopShortcut LNK Launcher GUI WinForms Windows Desktop Utility Automation DarkMode UAC Elevation ExecutionPolicy HiddenWindow pwsh PowerShell7
 
 .LICENSEURI https://opensource.org/licenses/MIT
 
+.PROJECTURI https://github.com/2civics/PowerShell-Desktop-Shortcut-Creator
+
 .RELEASENOTES
+v1.2.1:
+- Fixed PowerShell 7.x High-DPI & Multi-Resolution Rendering: Configured DpiUnawareGdiScaled high-DPI mode, DPI AutoScale baselines, dynamic ComboBox item heights, and WorkingArea screen clamping so the UI scales cleanly across resolutions and Windows display scales.
+- Responsive 3-Zone Layout: Replaced fixed pixel coordinates with TableLayoutPanel/FlowLayoutPanel containers, pinned the command preview and action buttons at the bottom, and auto-sized initial form height to eliminate side scrollbars on startup while supporting AutoScroll on smaller displays.
+
 v1.2.0:
 - Aligned PowerShell 5.1 / 7.x mode selection, Get-Pwsh7Info detection, inline status indicator, and background winget/GitHub MSI installation with PSGallery-Manager.
 - Added the "Windows Icons..." button (shell32.dll) alongside "Choose Icon..." and "Reset".
@@ -30,6 +36,12 @@ v1.1.0:
 
 #>
 
+# =======================================================================
+
+# AUTO-ELEVATION, STA APARTMENT & HIDDEN CONSOLE CHECK
+
+# =======================================================================
+
 <#
 .SYNOPSIS
     GUI Utility to Create Desktop Shortcuts for PowerShell Scripts (PS 5.1 & 7.x + Dark Mode + Auto-Elevating + Windowless)
@@ -39,18 +51,6 @@ v1.1.0:
     lets you browse for a .ps1 script, choose between PowerShell 5.1 and PowerShell 7.x (with automatic
     installation if missing), pick and preview a custom or Windows shell icon, configure launch flags,
     preview the exact command, and save the resulting .lnk shortcut directly to the Desktop.
-#>
-
-# =======================================================================
-
-# AUTO-ELEVATION, STA APARTMENT & HIDDEN CONSOLE CHECK
-
-# =======================================================================
-
-<#
-
-.DESCRIPTION
-    This script makes it easy to create a desktop icon for a powershell script so that it will execute with powershell, including running completely hidden in the background.
 #>
 
 $currentPrincipal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
@@ -95,6 +95,19 @@ if (-not $isAdmin -or ($isPS51 -and -not $isSTA)) {
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+
+if ($PSVersionTable.PSEdition -eq 'Core') {
+    try {
+        if (([System.Windows.Forms.Application]).GetMethod('SetHighDpiMode')) {
+            [void][System.Windows.Forms.Application]::SetHighDpiMode([System.Windows.Forms.HighDpiMode]::DpiUnawareGdiScaled)
+        }
+    }
+    catch { }
+}
+try {
+    [System.Windows.Forms.Application]::SetCompatibleTextRenderingDefault($false)
+}
+catch { }
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
 # Win32 helpers for Console Hiding, DWM Dark Title Bar, Cue Banners, Shell Icon Picker, and Icon Extraction
@@ -390,111 +403,254 @@ $script:Themes = @{
 }
 
 # =======================================================================
-# MAIN FORM & HEADER BANNER
+# MAIN FORM & RESPONSIVE 3-ZONE LAYOUT
 # =======================================================================
-$form = New-Object System.Windows.Forms.Form -Property @{
-    Text            = 'PowerShell Desktop Shortcut Creator (Administrator)'
-    Size            = New-Object System.Drawing.Size(580, 608)
-    MinimumSize     = New-Object System.Drawing.Size(580, 608)
-    MaximumSize     = New-Object System.Drawing.Size(580, 608)
-    StartPosition   = 'CenterScreen'
-    FormBorderStyle = 'FixedDialog'
-    MaximizeBox     = $false
-    Font            = New-Object System.Drawing.Font('Segoe UI', 9.5)
-}
+$fontUi = New-Object System.Drawing.Font('Segoe UI', 9.5)
+$cmbItemHeight = [Math]::Max(19, [System.Windows.Forms.TextRenderer]::MeasureText('Ag', $fontUi).Height + 2)
 
-$headerPanel = New-Object System.Windows.Forms.Panel -Property @{
-    Dock   = 'Top'
-    Height = 64
-}
+$form = New-Object System.Windows.Forms.Form
+$form.SuspendLayout()
+$form.AutoScaleDimensions = New-Object System.Drawing.SizeF(96, 96)
+$form.AutoScaleMode       = [System.Windows.Forms.AutoScaleMode]::Dpi
+$form.Font                = $fontUi
+$form.Text                = 'PowerShell Desktop Shortcut Creator (Administrator)'
+$form.Size                = New-Object System.Drawing.Size(610, 638)
+$form.MinimumSize         = New-Object System.Drawing.Size(460, 400)
+$form.StartPosition       = 'CenterScreen'
+$form.FormBorderStyle     = 'Sizable'
+$form.MaximizeBox         = $false
 
-$accentBar = New-Object System.Windows.Forms.Panel -Property @{
-    Dock   = 'Bottom'
-    Height = 3
-}
+# --- Top Header Banner ---
+$headerPanel = New-Object System.Windows.Forms.Panel
+$headerPanel.Dock   = 'Top'
+$headerPanel.Height = 64
 
-$lblTitle = New-Object System.Windows.Forms.Label -Property @{
-    Text      = 'PowerShell Desktop Shortcut Creator'
-    ForeColor = [System.Drawing.Color]::FromArgb(248, 250, 252)
-    Font      = New-Object System.Drawing.Font('Segoe UI Semibold', 12)
-    Location  = New-Object System.Drawing.Point(18, 10)
-    AutoSize  = $true
-}
+$accentBar = New-Object System.Windows.Forms.Panel
+$accentBar.Dock   = 'Bottom'
+$accentBar.Height = 3
+$headerPanel.Controls.Add($accentBar)
 
-$lblSubtitle = New-Object System.Windows.Forms.Label -Property @{
-    Text      = 'Browse to a .ps1 file, pick an icon, and configure how PowerShell runs it.'
-    ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
-    Font      = New-Object System.Drawing.Font('Segoe UI', 8.75)
-    Location  = New-Object System.Drawing.Point(19, 35)
-    AutoSize  = $true
-}
+$headerRight = New-Object System.Windows.Forms.Panel
+$headerRight.Dock    = 'Right'
+$headerRight.Width   = 118
+$headerRight.Padding = New-Object System.Windows.Forms.Padding(6, 16, 16, 16)
+$headerPanel.Controls.Add($headerRight)
 
 $btnTheme = New-Object System.Windows.Forms.Button -Property @{
     Text      = 'Light Mode'
-    Location  = New-Object System.Drawing.Point(456, 16)
-    Size      = New-Object System.Drawing.Size(90, 28)
+    Dock      = 'Fill'
     Font      = New-Object System.Drawing.Font('Segoe UI', 8.5)
     FlatStyle = 'Flat'
     Cursor    = [System.Windows.Forms.Cursors]::Hand
 }
 $btnTheme.FlatAppearance.BorderSize = 1
+$headerRight.Controls.Add($btnTheme)
 
-$headerPanel.Controls.AddRange(@($lblTitle, $lblSubtitle, $btnTheme, $accentBar))
+$headerLeft = New-Object System.Windows.Forms.Panel
+$headerLeft.Dock    = 'Fill'
+$headerLeft.Padding = New-Object System.Windows.Forms.Padding(18, 9, 6, 4)
+$headerPanel.Controls.Add($headerLeft)
+
+$lblSubtitle = New-Object System.Windows.Forms.Label -Property @{
+    Text      = 'Browse to a .ps1 file, pick an icon, and configure how PowerShell runs it.'
+    Dock      = 'Top'
+    ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
+    Font      = New-Object System.Drawing.Font('Segoe UI', 8.75)
+    AutoSize  = $true
+}
+$headerLeft.Controls.Add($lblSubtitle)
+
+$lblTitle = New-Object System.Windows.Forms.Label -Property @{
+    Text      = 'PowerShell Desktop Shortcut Creator'
+    Dock      = 'Top'
+    ForeColor = [System.Drawing.Color]::FromArgb(248, 250, 252)
+    Font      = New-Object System.Drawing.Font('Segoe UI Semibold', 12)
+    AutoSize  = $true
+}
+$headerLeft.Controls.Add($lblTitle)
+$lblSubtitle.BringToFront()
+
+$accentBar.SendToBack()
+$headerLeft.BringToFront()
 $form.Controls.Add($headerPanel)
 
-# =======================================================================
-# 1. TARGET SCRIPT SELECTION
-# =======================================================================
+# --- Bottom Status & Action Buttons Bar ---
+$pnlBottom = New-Object System.Windows.Forms.TableLayoutPanel
+$pnlBottom.Dock         = 'Bottom'
+$pnlBottom.AutoSize     = $true
+$pnlBottom.AutoSizeMode = 'GrowAndShrink'
+$pnlBottom.ColumnCount  = 2
+$pnlBottom.RowCount     = 1
+$pnlBottom.Padding      = New-Object System.Windows.Forms.Padding(16, 6, 16, 10)
+[void]$pnlBottom.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+[void]$pnlBottom.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+[void]$pnlBottom.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::AutoSize)))
+$form.Controls.Add($pnlBottom)
+
+$lblStatus = New-Object System.Windows.Forms.Label
+$lblStatus.Text      = 'Select a PowerShell script to begin.'
+$lblStatus.Dock      = 'Fill'
+$lblStatus.TextAlign = 'MiddleLeft'
+$lblStatus.Margin    = New-Object System.Windows.Forms.Padding(0, 2, 8, 2)
+$pnlBottom.Controls.Add($lblStatus, 0, 0)
+
+$flpBottomBtns = New-Object System.Windows.Forms.FlowLayoutPanel
+$flpBottomBtns.Dock         = 'Right'
+$flpBottomBtns.AutoSize     = $true
+$flpBottomBtns.AutoSizeMode = 'GrowAndShrink'
+$flpBottomBtns.WrapContents = $false
+$flpBottomBtns.Margin       = New-Object System.Windows.Forms.Padding(0)
+$pnlBottom.Controls.Add($flpBottomBtns, 1, 0)
+
+$btnCreate = New-Object System.Windows.Forms.Button -Property @{
+    Text      = 'Create Shortcut'
+    Size      = New-Object System.Drawing.Size(124, 32)
+    Enabled   = $false
+    ForeColor = [System.Drawing.Color]::White
+    FlatStyle = 'Flat'
+    Cursor    = [System.Windows.Forms.Cursors]::Hand
+    Margin    = New-Object System.Windows.Forms.Padding(0, 0, 8, 0)
+}
+$btnCreate.FlatAppearance.BorderSize = 0
+$flpBottomBtns.Controls.Add($btnCreate)
+
+$btnClose = New-Object System.Windows.Forms.Button -Property @{
+    Text      = 'Close'
+    Size      = New-Object System.Drawing.Size(76, 32)
+    FlatStyle = 'Flat'
+    Cursor    = [System.Windows.Forms.Cursors]::Hand
+    Margin    = New-Object System.Windows.Forms.Padding(0)
+}
+$btnClose.FlatAppearance.BorderSize = 1
+$flpBottomBtns.Controls.Add($btnClose)
+
+# --- Pinned Command Preview Scroll Box ---
+$pnlPreview = New-Object System.Windows.Forms.Panel
+$pnlPreview.Dock    = 'Bottom'
+$pnlPreview.Height  = 74
+$pnlPreview.Padding = New-Object System.Windows.Forms.Padding(16, 4, 16, 4)
+$form.Controls.Add($pnlPreview)
+
+$txtPreview = New-Object System.Windows.Forms.TextBox -Property @{
+    Dock        = 'Fill'
+    Multiline   = $true
+    ReadOnly    = $true
+    ScrollBars  = 'Vertical'
+    BorderStyle = 'FixedSingle'
+    Font        = New-Object System.Drawing.Font('Consolas', 8.5)
+}
+$pnlPreview.Controls.Add($txtPreview)
+
+$lblPreview = New-Object System.Windows.Forms.Label -Property @{
+    Text     = 'Shortcut Target Command Preview:'
+    Dock     = 'Top'
+    AutoSize = $true
+    Padding  = New-Object System.Windows.Forms.Padding(0, 0, 0, 3)
+}
+$pnlPreview.Controls.Add($lblPreview)
+$txtPreview.BringToFront()
+
+# --- Scrollable Middle Body (Inputs & Launch Options) ---
+$pnlScroll = New-Object System.Windows.Forms.Panel
+$pnlScroll.Dock       = 'Fill'
+$pnlScroll.AutoScroll = $true
+$pnlScroll.Padding    = New-Object System.Windows.Forms.Padding(16, 10, 16, 4)
+$form.Controls.Add($pnlScroll)
+
+# Enforce exact dock order: Header (Top), Bottom (Bottom), Preview (above Bottom), Scroll (Fill)
+$headerPanel.BringToFront()
+$pnlBottom.BringToFront()
+$pnlPreview.BringToFront()
+$pnlScroll.BringToFront()
+
+$tlpMain = New-Object System.Windows.Forms.TableLayoutPanel
+$tlpMain.Dock         = 'Top'
+$tlpMain.AutoSize     = $true
+$tlpMain.AutoSizeMode = 'GrowAndShrink'
+$tlpMain.ColumnCount  = 1
+[void]$tlpMain.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+$pnlScroll.Controls.Add($tlpMain)
+
+$pnlScroll.Add_SizeChanged({
+    $avail = [Math]::Max(200, $pnlScroll.ClientSize.Width - $pnlScroll.Padding.Horizontal)
+    $tlpMain.MaximumSize = New-Object System.Drawing.Size($avail, 0)
+})
+
+# 1. Target Script Selection
 $lblScript = New-Object System.Windows.Forms.Label -Property @{
     Text     = 'PowerShell Script (.ps1):'
-    Location = New-Object System.Drawing.Point(20, 78)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 0, 0, 2)
 }
+$tlpMain.Controls.Add($lblScript)
+
+$tlpScript = New-Object System.Windows.Forms.TableLayoutPanel
+$tlpScript.Dock         = 'Top'
+$tlpScript.AutoSize     = $true
+$tlpScript.AutoSizeMode = 'GrowAndShrink'
+$tlpScript.ColumnCount  = 2
+$tlpScript.Margin       = New-Object System.Windows.Forms.Padding(0, 0, 0, 6)
+[void]$tlpScript.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+[void]$tlpScript.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+$tlpMain.Controls.Add($tlpScript)
 
 $txtScriptPath = New-Object System.Windows.Forms.TextBox -Property @{
-    Location    = New-Object System.Drawing.Point(20, 100)
-    Size        = New-Object System.Drawing.Size(435, 25)
+    Dock        = 'Fill'
     BorderStyle = 'FixedSingle'
+    Margin      = New-Object System.Windows.Forms.Padding(0, 1, 8, 1)
 }
+$tlpScript.Controls.Add($txtScriptPath, 0, 0)
 
 $btnBrowse = New-Object System.Windows.Forms.Button -Property @{
     Text      = 'Browse...'
-    Location  = New-Object System.Drawing.Point(463, 99)
-    Size      = New-Object System.Drawing.Size(83, 26)
+    Size      = New-Object System.Drawing.Size(88, 26)
     FlatStyle = 'Flat'
     Cursor    = [System.Windows.Forms.Cursors]::Hand
+    Margin    = New-Object System.Windows.Forms.Padding(0)
 }
 $btnBrowse.FlatAppearance.BorderSize = 1
+$tlpScript.Controls.Add($btnBrowse, 1, 0)
 
-# =======================================================================
-# 2. SHORTCUT NAME
-# =======================================================================
+# 2. Shortcut Name
 $lblName = New-Object System.Windows.Forms.Label -Property @{
     Text     = 'Desktop Shortcut Name:'
-    Location = New-Object System.Drawing.Point(20, 134)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 0, 0, 2)
 }
+$tlpMain.Controls.Add($lblName)
 
 $txtShortcutName = New-Object System.Windows.Forms.TextBox -Property @{
-    Location    = New-Object System.Drawing.Point(20, 156)
-    Size        = New-Object System.Drawing.Size(526, 25)
+    Dock        = 'Top'
     BorderStyle = 'FixedSingle'
+    Margin      = New-Object System.Windows.Forms.Padding(0, 0, 0, 6)
 }
+$tlpMain.Controls.Add($txtShortcutName)
 
-# =======================================================================
-# 3. CUSTOM ICON PICKER & LIVE PREVIEW
-# =======================================================================
+# 3. Custom Icon Picker & Live Preview
 $lblIcon = New-Object System.Windows.Forms.Label -Property @{
     Text     = 'Shortcut Icon (.ico, .exe, .dll):'
-    Location = New-Object System.Drawing.Point(20, 190)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 0, 0, 2)
 }
+$tlpMain.Controls.Add($lblIcon)
+
+$tlpIcon = New-Object System.Windows.Forms.TableLayoutPanel
+$tlpIcon.Dock         = 'Top'
+$tlpIcon.AutoSize     = $true
+$tlpIcon.AutoSizeMode = 'GrowAndShrink'
+$tlpIcon.ColumnCount  = 3
+$tlpIcon.Margin       = New-Object System.Windows.Forms.Padding(0, 0, 0, 8)
+[void]$tlpIcon.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+[void]$tlpIcon.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+[void]$tlpIcon.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+$tlpMain.Controls.Add($tlpIcon)
 
 $pnlIconBox = New-Object System.Windows.Forms.Panel -Property @{
-    Location    = New-Object System.Drawing.Point(20, 212)
     Size        = New-Object System.Drawing.Size(42, 42)
     BorderStyle = 'FixedSingle'
+    Margin      = New-Object System.Windows.Forms.Padding(0, 0, 8, 0)
 }
+$tlpIcon.Controls.Add($pnlIconBox, 0, 0)
 
 $picIcon = New-Object System.Windows.Forms.PictureBox -Property @{
     Location = New-Object System.Drawing.Point(4, 4)
@@ -504,47 +660,60 @@ $picIcon = New-Object System.Windows.Forms.PictureBox -Property @{
 $pnlIconBox.Controls.Add($picIcon)
 
 $txtIconPath = New-Object System.Windows.Forms.TextBox -Property @{
-    Location    = New-Object System.Drawing.Point(70, 220)
-    Size        = New-Object System.Drawing.Size(228, 25)
+    Dock        = 'Fill'
     Text        = $ps5IconSpec
     BorderStyle = 'FixedSingle'
+    Margin      = New-Object System.Windows.Forms.Padding(0, 9, 8, 8)
 }
+$tlpIcon.Controls.Add($txtIconPath, 1, 0)
+
+$flpIconBtns = New-Object System.Windows.Forms.FlowLayoutPanel
+$flpIconBtns.AutoSize     = $true
+$flpIconBtns.AutoSizeMode = 'GrowAndShrink'
+$flpIconBtns.WrapContents = $false
+$flpIconBtns.Margin       = New-Object System.Windows.Forms.Padding(0, 7, 0, 0)
+$tlpIcon.Controls.Add($flpIconBtns, 2, 0)
 
 $btnBrowseIcon = New-Object System.Windows.Forms.Button -Property @{
     Text      = 'Choose Icon...'
-    Location  = New-Object System.Drawing.Point(304, 219)
-    Size      = New-Object System.Drawing.Size(88, 26)
+    Size      = New-Object System.Drawing.Size(98, 27)
     FlatStyle = 'Flat'
     Cursor    = [System.Windows.Forms.Cursors]::Hand
+    Margin    = New-Object System.Windows.Forms.Padding(0, 0, 4, 0)
 }
 $btnBrowseIcon.FlatAppearance.BorderSize = 1
+$flpIconBtns.Controls.Add($btnBrowseIcon)
 
 $btnWinIcon = New-Object System.Windows.Forms.Button -Property @{
     Text      = 'Windows Icons...'
-    Location  = New-Object System.Drawing.Point(396, 219)
-    Size      = New-Object System.Drawing.Size(94, 26)
+    Size      = New-Object System.Drawing.Size(110, 27)
     FlatStyle = 'Flat'
     Cursor    = [System.Windows.Forms.Cursors]::Hand
+    Margin    = New-Object System.Windows.Forms.Padding(0, 0, 4, 0)
 }
 $btnWinIcon.FlatAppearance.BorderSize = 1
+$flpIconBtns.Controls.Add($btnWinIcon)
 
 $btnResetIcon = New-Object System.Windows.Forms.Button -Property @{
     Text      = 'Reset'
-    Location  = New-Object System.Drawing.Point(494, 219)
-    Size      = New-Object System.Drawing.Size(52, 26)
+    Size      = New-Object System.Drawing.Size(56, 27)
     FlatStyle = 'Flat'
     Cursor    = [System.Windows.Forms.Cursors]::Hand
+    Margin    = New-Object System.Windows.Forms.Padding(0)
 }
 $btnResetIcon.FlatAppearance.BorderSize = 1
+$flpIconBtns.Controls.Add($btnResetIcon)
 
-# =======================================================================
-# 4. EXECUTION OPTIONS GROUP (CUSTOM-PAINTED FOR CLEAN DARK BORDERS)
-# =======================================================================
+# 4. Execution Options Group (Custom-painted for clean dark borders)
 $grpOptions = New-Object System.Windows.Forms.GroupBox -Property @{
-    Text     = 'PowerShell Launch Options'
-    Location = New-Object System.Drawing.Point(20, 266)
-    Size     = New-Object System.Drawing.Size(526, 166)
+    Text         = 'PowerShell Launch Options'
+    Dock         = 'Top'
+    AutoSize     = $true
+    AutoSizeMode = 'GrowAndShrink'
+    Padding      = New-Object System.Windows.Forms.Padding(12, 20, 12, 8)
+    Margin       = New-Object System.Windows.Forms.Padding(0, 0, 0, 2)
 }
+$tlpMain.Controls.Add($grpOptions)
 
 $grpOptions.Add_Paint({
     param($sender, $e)
@@ -568,64 +737,79 @@ $grpOptions.Add_Paint({
     $fgBrush.Dispose()
 })
 
+$tlpOpts = New-Object System.Windows.Forms.TableLayoutPanel
+$tlpOpts.Dock         = 'Top'
+$tlpOpts.AutoSize     = $true
+$tlpOpts.AutoSizeMode = 'GrowAndShrink'
+$tlpOpts.ColumnCount  = 1
+[void]$tlpOpts.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+$grpOptions.Controls.Add($tlpOpts)
+
+$flpModeRow = New-Object System.Windows.Forms.FlowLayoutPanel
+$flpModeRow.Dock         = 'Top'
+$flpModeRow.AutoSize     = $true
+$flpModeRow.AutoSizeMode = 'GrowAndShrink'
+$flpModeRow.WrapContents = $true
+$flpModeRow.Margin       = New-Object System.Windows.Forms.Padding(0, 0, 0, 4)
+$tlpOpts.Controls.Add($flpModeRow)
+
 $lblMode = New-Object System.Windows.Forms.Label -Property @{
     Text     = 'PowerShell Mode:'
-    Location = New-Object System.Drawing.Point(16, 29)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 5, 8, 2)
 }
+$flpModeRow.Controls.Add($lblMode)
 
-$cmbMode = New-Object System.Windows.Forms.ComboBox -Property @{
-    Location      = New-Object System.Drawing.Point(132, 25)
-    Size          = New-Object System.Drawing.Size(204, 25)
-    DropDownStyle = 'DropDownList'
-    DrawMode      = 'OwnerDrawFixed'
-    FlatStyle     = 'Flat'
-    ItemHeight    = 19
-}
+$cmbMode = New-Object System.Windows.Forms.ComboBox
+$cmbMode.Width         = 212
+$cmbMode.DropDownStyle = 'DropDownList'
+$cmbMode.DrawMode      = 'OwnerDrawFixed'
+$cmbMode.FlatStyle     = 'Flat'
+$cmbMode.ItemHeight    = $cmbItemHeight
+$cmbMode.Margin        = New-Object System.Windows.Forms.Padding(0, 1, 10, 2)
 [void]$cmbMode.Items.AddRange(@('PowerShell 5.1 (powershell.exe)', 'PowerShell 7.x (pwsh.exe)'))
 $cmbMode.SelectedIndex = if (-not $isPS51 -and $null -ne (Get-Pwsh7Info)) { 1 } else { 0 }
+$flpModeRow.Controls.Add($cmbMode)
 
 $lblModeStatus = New-Object System.Windows.Forms.Label -Property @{
     Text     = ''
-    Location = New-Object System.Drawing.Point(344, 29)
-    Size     = New-Object System.Drawing.Size(172, 20)
+    AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 5, 0, 2)
 }
+$flpModeRow.Controls.Add($lblModeStatus)
+
+$flpRunAsRow = New-Object System.Windows.Forms.FlowLayoutPanel
+$flpRunAsRow.Dock         = 'Top'
+$flpRunAsRow.AutoSize     = $true
+$flpRunAsRow.AutoSizeMode = 'GrowAndShrink'
+$flpRunAsRow.WrapContents = $true
+$flpRunAsRow.Margin       = New-Object System.Windows.Forms.Padding(0, 0, 0, 2)
+$tlpOpts.Controls.Add($flpRunAsRow)
 
 $chkRunAs = New-Object System.Windows.Forms.CheckBox -Property @{
     Text     = 'Run as Administrator (UAC prompt on launch)'
-    Location = New-Object System.Drawing.Point(16, 60)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 4, 14, 2)
 }
-
-$chkNoExit = New-Object System.Windows.Forms.CheckBox -Property @{
-    Text     = 'Keep PowerShell window open after script finishes (-NoExit)'
-    Location = New-Object System.Drawing.Point(16, 86)
-    AutoSize = $true
-}
-
-$chkBypass = New-Object System.Windows.Forms.CheckBox -Property @{
-    Text     = 'Bypass Execution Policy (-ExecutionPolicy Bypass)'
-    Location = New-Object System.Drawing.Point(16, 112)
-    Checked  = $true
-    AutoSize = $true
-}
+$flpRunAsRow.Controls.Add($chkRunAs)
 
 $lblWindow = New-Object System.Windows.Forms.Label -Property @{
     Text     = 'Window:'
-    Location = New-Object System.Drawing.Point(346, 62)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 5, 6, 2)
 }
+$flpRunAsRow.Controls.Add($lblWindow)
 
-$cmbWindow = New-Object System.Windows.Forms.ComboBox -Property @{
-    Location      = New-Object System.Drawing.Point(404, 58)
-    Size          = New-Object System.Drawing.Size(106, 25)
-    DropDownStyle = 'DropDownList'
-    DrawMode      = 'OwnerDrawFixed'
-    FlatStyle     = 'Flat'
-    ItemHeight    = 19
-}
+$cmbWindow = New-Object System.Windows.Forms.ComboBox
+$cmbWindow.Width         = 108
+$cmbWindow.DropDownStyle = 'DropDownList'
+$cmbWindow.DrawMode      = 'OwnerDrawFixed'
+$cmbWindow.FlatStyle     = 'Flat'
+$cmbWindow.ItemHeight    = $cmbItemHeight
+$cmbWindow.Margin        = New-Object System.Windows.Forms.Padding(0, 1, 0, 2)
 [void]$cmbWindow.Items.AddRange(@('Normal', 'Minimized', 'Maximized', 'Hidden'))
 $cmbWindow.SelectedIndex = 0
+$flpRunAsRow.Controls.Add($cmbWindow)
 
 $drawComboItem = {
     param($sender, $e)
@@ -638,84 +822,80 @@ $drawComboItem = {
     $bgBrush = New-Object System.Drawing.SolidBrush($bgColor)
     $fgBrush = New-Object System.Drawing.SolidBrush($fgColor)
     $e.Graphics.FillRectangle($bgBrush, $e.Bounds)
-    $e.Graphics.DrawString($sender.Items[$e.Index].ToString(), $sender.Font, $fgBrush, ($e.Bounds.X + 4), ($e.Bounds.Y + 2))
+    $yPos = [Math]::Max(1, [int](($e.Bounds.Height - $sender.Font.Height) / 2))
+    $e.Graphics.DrawString($sender.Items[$e.Index].ToString(), $sender.Font, $fgBrush, ($e.Bounds.X + 4), ($e.Bounds.Y + $yPos))
     $bgBrush.Dispose()
     $fgBrush.Dispose()
 }
+
 $cmbMode.Add_DrawItem($drawComboItem)
 $cmbWindow.Add_DrawItem($drawComboItem)
 
+$chkNoExit = New-Object System.Windows.Forms.CheckBox -Property @{
+    Text     = 'Keep PowerShell window open after script finishes (-NoExit)'
+    AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 1, 0, 2)
+}
+$tlpOpts.Controls.Add($chkNoExit)
+
+$chkBypass = New-Object System.Windows.Forms.CheckBox -Property @{
+    Text     = 'Bypass Execution Policy (-ExecutionPolicy Bypass)'
+    Checked  = $true
+    AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 1, 0, 4)
+}
+$tlpOpts.Controls.Add($chkBypass)
+
+$tlpArgs = New-Object System.Windows.Forms.TableLayoutPanel
+$tlpArgs.Dock         = 'Top'
+$tlpArgs.AutoSize     = $true
+$tlpArgs.AutoSizeMode = 'GrowAndShrink'
+$tlpArgs.ColumnCount  = 2
+$tlpArgs.Margin       = New-Object System.Windows.Forms.Padding(0)
+[void]$tlpArgs.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+[void]$tlpArgs.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+$tlpOpts.Controls.Add($tlpArgs)
+
 $lblArgs = New-Object System.Windows.Forms.Label -Property @{
     Text     = 'Script Arguments (optional):'
-    Location = New-Object System.Drawing.Point(16, 138)
     AutoSize = $true
+    Margin   = New-Object System.Windows.Forms.Padding(0, 4, 8, 2)
 }
+$tlpArgs.Controls.Add($lblArgs, 0, 0)
 
 $txtArgs = New-Object System.Windows.Forms.TextBox -Property @{
-    Location    = New-Object System.Drawing.Point(180, 135)
-    Size        = New-Object System.Drawing.Size(330, 23)
+    Dock        = 'Fill'
     BorderStyle = 'FixedSingle'
+    Margin      = New-Object System.Windows.Forms.Padding(0, 1, 0, 1)
 }
+$tlpArgs.Controls.Add($txtArgs, 1, 0)
 
-$grpOptions.Controls.AddRange(@(
-    $lblMode, $cmbMode, $lblModeStatus,
-    $chkRunAs, $chkNoExit, $chkBypass,
-    $lblWindow, $cmbWindow,
-    $lblArgs, $txtArgs
-))
+$form.ResumeLayout($false)
+$form.PerformLayout()
 
-# =======================================================================
-# 5. LIVE COMMAND PREVIEW & STATUS
-# =======================================================================
-$lblPreview = New-Object System.Windows.Forms.Label -Property @{
-    Text     = 'Shortcut Target Command Preview:'
-    Location = New-Object System.Drawing.Point(20, 442)
-    AutoSize = $true
-}
+$form.Add_Load({
+    $wa   = [System.Windows.Forms.Screen]::FromControl($form).WorkingArea
+    $maxW = [Math]::Max(420, $wa.Width - 20)
+    $maxH = [Math]::Max(340, $wa.Height - 20)
 
-$txtPreview = New-Object System.Windows.Forms.TextBox -Property @{
-    Location    = New-Object System.Drawing.Point(20, 464)
-    Size        = New-Object System.Drawing.Size(526, 42)
-    Multiline   = $true
-    ReadOnly    = $true
-    BorderStyle = 'FixedSingle'
-    Font        = New-Object System.Drawing.Font('Consolas', 8.5)
-}
+    $form.PerformLayout()
+    $availW = [Math]::Max(200, $pnlScroll.ClientSize.Width - $pnlScroll.Padding.Horizontal)
+    $tlpMain.MaximumSize = New-Object System.Drawing.Size($availW, 0)
+    $form.PerformLayout()
 
-$lblStatus = New-Object System.Windows.Forms.Label -Property @{
-    Text     = 'Select a PowerShell script to begin.'
-    Location = New-Object System.Drawing.Point(20, 520)
-    Size     = New-Object System.Drawing.Size(330, 34)
-}
+    $needScrollH = $tlpMain.Height + $pnlScroll.Padding.Vertical
+    $overflow    = $needScrollH - $pnlScroll.ClientSize.Height
+    $targetH     = if ($overflow -gt 0) { $form.Height + $overflow + 6 } else { $form.Height }
 
-$btnCreate = New-Object System.Windows.Forms.Button -Property @{
-    Text      = 'Create Shortcut'
-    Location  = New-Object System.Drawing.Point(358, 516)
-    Size      = New-Object System.Drawing.Size(112, 32)
-    Enabled   = $false
-    ForeColor = [System.Drawing.Color]::White
-    FlatStyle = 'Flat'
-    Cursor    = [System.Windows.Forms.Cursors]::Hand
-}
-$btnCreate.FlatAppearance.BorderSize = 0
-
-$btnClose = New-Object System.Windows.Forms.Button -Property @{
-    Text      = 'Close'
-    Location  = New-Object System.Drawing.Point(476, 516)
-    Size      = New-Object System.Drawing.Size(70, 32)
-    FlatStyle = 'Flat'
-    Cursor    = [System.Windows.Forms.Cursors]::Hand
-}
-$btnClose.FlatAppearance.BorderSize = 1
-
-$form.Controls.AddRange(@(
-    $lblScript, $txtScriptPath, $btnBrowse,
-    $lblName, $txtShortcutName,
-    $lblIcon, $pnlIconBox, $txtIconPath, $btnBrowseIcon, $btnWinIcon, $btnResetIcon,
-    $grpOptions,
-    $lblPreview, $txtPreview,
-    $lblStatus, $btnCreate, $btnClose
-))
+    $form.MinimumSize = New-Object System.Drawing.Size(
+        [Math]::Min($form.MinimumSize.Width, $maxW),
+        [Math]::Min($form.MinimumSize.Height, $maxH)
+    )
+    $form.Size = New-Object System.Drawing.Size(
+        [Math]::Min($form.Width, $maxW),
+        [Math]::Min($targetH, $maxH)
+    )
+})
 
 # =======================================================================
 # THEME ENGINE & SHORTCUT LOGIC
@@ -821,7 +1001,13 @@ function Apply-Theme {
 
     $form.BackColor        = $t.FormBg
     $headerPanel.BackColor = $t.HeaderBg
+    $headerLeft.BackColor  = $t.HeaderBg
+    $headerRight.BackColor = $t.HeaderBg
     $accentBar.BackColor   = $t.Accent
+
+    foreach ($pnl in @($pnlBottom, $flpBottomBtns, $pnlPreview, $pnlScroll, $tlpMain, $tlpScript, $tlpIcon, $flpIconBtns, $tlpOpts, $flpModeRow, $flpRunAsRow, $tlpArgs)) {
+        $pnl.BackColor = $t.FormBg
+    }
 
     $btnTheme.Text      = if ($script:IsDarkMode) { 'Light Mode' } else { 'Dark Mode' }
     $btnTheme.BackColor = [System.Drawing.Color]::FromArgb(30, 41, 59)
@@ -1108,7 +1294,6 @@ $openIconPickerForFile = {
     }
 }
 
-# Opens the icon picker on the active PowerShell .exe (PS 7 or PS 5.1) or current custom icon file
 $btnBrowseIcon.Add_Click({
     $parsed   = & $resolveIcon $txtIconPath.Text
     $pwshInfo = if ($cmbMode.SelectedIndex -eq 1) { Get-Pwsh7Info } else { $null }
@@ -1118,7 +1303,6 @@ $btnBrowseIcon.Add_Click({
     & $openIconPickerForFile $seedFile $seedIdx
 })
 
-# Opens the standard built-in Windows shell32.dll icon gallery directly
 $btnWinIcon.Add_Click({
     & $openIconPickerForFile $winShellDll 0
 })

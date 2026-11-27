@@ -114,15 +114,22 @@ Or run it directly by path:
 
 ## Changelog
 
-### v1.2.0
-* Added **PowerShell 5.1** and **PowerShell 7.x (`pwsh.exe`)** mode selection with `Get-Pwsh7Info` detection (`InstalledVersions` registry keys, `App Paths`, MSI, and MSIX `WindowsApps` paths) and automatic background installation (`winget` + GitHub `.msi` fallback).
-* Added the **Windows Icons...** button (`shell32.dll`) alongside **Choose Icon...** and **Reset**.
-* Conditionally injects `-STA` only for Windows PowerShell 5.1 during self-relaunch and shortcut creation.
-* Preserved the active PowerShell host executable across UAC self-elevation via `(Get-Process -Id $PID).Path`.
-* Fixed `Add-Type` assembly resolution on PowerShell 7 (.NET 8+) and added forced foreground window activation (`SW_SHOW` + `SetForegroundWindow`).
+## What's New in v1.2.1
 
-### v1.1.0
-* Hid the PowerShell console window when running this utility via hidden relaunch flags and Win32 `ShowWindow` fallback.
-* Added a **Hidden** option to the **Window** dropdown to execute target scripts with `-WindowStyle Hidden` (and start minimized to prevent console flash).
-* Automatically disables `-NoExit` when **Hidden** is selected to prevent orphaned background PowerShell processes.
-* Updated the live command preview to reflect `-WindowStyle Hidden` dynamically.
+- **Fixed PowerShell 7.x High-DPI & Multi-Resolution Rendering:** Configured `DpiUnawareGdiScaled` high-DPI mode, DPI `AutoScale` baselines, dynamic `ComboBox` item heights, and `WorkingArea` screen clamping so the UI scales cleanly across resolutions and Windows display scales.
+- **Responsive 3-Zone Layout:** Replaced fixed pixel coordinates with `TableLayoutPanel`/`FlowLayoutPanel` containers, pinned the command preview and action buttons at the bottom, and auto-sized initial form height to eliminate side scrollbars on startup while supporting `AutoScroll` on smaller displays.
+
+## What's New in v1.2.0
+
+- **Aligned PowerShell 5.1 / 7.x Integration:** Aligned PowerShell 5.1 / 7.x mode selection, `Get-Pwsh7Info` detection, inline status indicator, and background `winget`/GitHub MSI installation with `PSGallery-Manager`.
+- **Added Windows Icon Picker:** Added the **Windows Icons...** button (`shell32.dll`) alongside **Choose Icon...** and **Reset**.
+- **Preserved Host Executable Across Elevation:** Preserved the active PowerShell host executable across UAC self-elevation via `(Get-Process -Id $PID).Path` and restricted `-STA` to Windows PowerShell 5.1.
+- **Fixed PowerShell 7 Assembly Compilation:** Fixed `Add-Type` compilation on PowerShell 7 (.NET 8+) by dynamically resolving loaded assembly locations for `-ReferencedAssemblies`.
+- **Improved Window Activation & COM Cleanup:** Forced foreground window activation (`SW_SHOW` + `SetForegroundWindow`) on form startup and ensured deterministic COM release before binary UAC patching.
+
+## What's New in v1.1.0
+
+- **Hidden Console Window on Launch:** Hid the PowerShell console window when running this utility via hidden relaunch flags and Win32 `ShowWindow` fallback.
+- **Added Hidden Window Shortcut Option:** Added a **Hidden** option to the **Window** dropdown to create shortcuts that execute target scripts with `-WindowStyle Hidden` (and start minimized to prevent window flash).
+- **Prevented Orphaned Background Processes:** Automatically disables `-NoExit` when **Hidden** is selected to prevent orphaned background PowerShell processes.
+- **Dynamic Command Preview Updates:** Updated the live command preview to reflect `-WindowStyle Hidden` dynamically.
